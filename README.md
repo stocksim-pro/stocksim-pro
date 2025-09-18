@@ -18,7 +18,7 @@ Trade with \*\*virtual money\*\* in a simulated market environment — complete 
 
 \## 🚀 Live Demo
 
-Play now: \*\*\[StockSim Pro on GitHub Pages](https://stocksim-pro.github.io/stocksim-pro/)\*\*
+Play now: \*\*\[StockSim Pro on GitHub Pages]( https://stocksim-pro.github.io/stocksim-pro/ )\*\*\
 
 
 
