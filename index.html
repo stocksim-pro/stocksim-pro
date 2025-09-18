@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>StockSim Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: Arial, sans-serif; background: #0b0b0f; color: #e7e7e9; margin: 0; padding: 20px; }
+  nav a { color: #4de37b; margin-right: 12px; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  footer { margin-top: 20px; font-size: 14px; color: #aaa; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="privacy.html">Privacy Policy</a>
+  <a href="terms.html">Terms of Use</a>
+</nav>
+
+<h1>📈 StockSim Pro</h1>
+<p>Welcome to StockSim Pro — your educational stock market simulator. Trade with fake money, track your portfolio, and learn market mechanics.</p>
+
+<!-- Your full simulator HTML/JS goes here -->
+<!-- Paste the StockSim Pro game code we built earlier here -->
+
+<footer>
+  © 2025 StockSim Pro — Educational use only. Not financial advice.
+</footer>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>StockSim Pro – Mechanics + Analytics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: Arial, sans-serif; background: #0b0b0f; color: #e7e7e9; margin: 0; }
+  header, main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 20px; }
+  .stats { font-size: 14px; color: #a8a8ad; }
+  .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button { background: #2b5cff; color: white; border: 0; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  button.secondary { background: #2b2b34; }
+  button.warn { background: #b33c3c; }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .card { background: #14141b; border: 1px solid #1f1f29; border-radius: 10px; padding: 12px; margin-top: 12px; }
+  .news { border-left: 4px solid orange; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid #1f1f29; padding: 10px 8px; text-align: left; }
+  th { color: #bdbdc7; font-weight: 600; background: #121219; position: sticky; top: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #232331; color: #c7c7d0; }
+  .green { color: #4de37b; }
+  .red { color: #ff6363; }
+  .muted { color: #a8a8ad; }
+  .flex { display: flex; align-items: center; gap: 8px; }
+  .right { text-align: right; }
+  .small { font-size: 12px; color: #a8a8ad; }
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+  .open { background: #143f2d; color: #5bffad; }
+  .closed { background: #3f1420; color: #ff8599; }
+  canvas { width: 100%; height: 180px; background: #0f0f14; border: 1px solid #1f1f29; border-radius: 8px; }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #232331; padding: 2px 6px; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📈 StockSim Pro</h1>
+    <div class="stats">
+      Cash: R<span id="cash">0</span> • Equity: R<span id="equity">0</span> •
+      <span id="statusBadge" class="badge">Status</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="bar">
+      <button id="resetBtn" class="secondary">Reset game</button>
+      <span class="small">Market hours: 09:00–22:00 (local) • Leverage: 2× • Maint. margin: 25% • Fee: 0.10% (min R10) • Spread: 0.10%</span>
+    </div>
+
+    <div id="newsBox" class="card news">No news right now.</div>
+
+    <div class="row">
+      <div class="card">
+        <div class="flex" style="justify-content: space-between;">
+          <h3 style="margin:0;">Market</h3>
+          <span class="small" id="lastUpdate">—</span>
+        </div>
+        <div style="overflow:auto; max-height: 380px; margin-top: 8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Sector</th>
+                <th class="right">Price</th>
+                <th class="right">Day %</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="marketBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex" style="justify-content: space-between;">
+          <h3 style="margin:0;">Portfolio</h3>
+          <span class="small" id="holdingsCount"></span>
+        </div>
+        <div style="overflow:auto; max-height: 380px; margin-top: 8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th class="right">Qty</th>
+                <th class="right">Avg cost</th>
+                <th class="right">Value</th>
+                <th class="right">PnL</th>
+              </tr>
+            </thead>
+            <tbody id="portfolioBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">Analytics</h3>
+        <canvas id="equityChart" width="900" height="180"></canvas>
+        <div class="small" id="analyticsLine" style="margin-top:8px;"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">Orders (limit)</h3>
+        <div class="small">Place a limit order: <span class="kbd">L</span> on a symbol row, or use buttons.</div>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>ID</th><th>Symbol</th><th>Side</th><th class="right">Qty</th><th class="right">Limit</th><th>Status</th><th>Cancel</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Transactions & events</h3>
+      <ul class="small" id="historyList" style="list-style:none; padding-left: 16px; margin:0;"></ul>
+    </div>
+  </main>
+
+<script>
+/* =========================
+   Config
+   ========================= */
+const MARKET_OPEN_HOUR = 9;
+const MARKET_CLOSE_HOUR = 22;
+const MAX_LEVERAGE = 2.0;           // exposure <= equity * MAX_LEVERAGE
+const MAINT_MARGIN = 0.25;          // 25% maintenance
+const COMMISSION_RATE = 0.001;      // 0.10%
+const COMMISSION_MIN = 10;          // min R10
+const SPREAD_BPS = 10;              // 0.10% spread (one-way)
+const TICK_MS = 3000;
+
+/* =========================
+   State
+   ========================= */
+let cash = parseFloat(localStorage.getItem('cash') || '100000');
+let portfolio = JSON.parse(localStorage.getItem('portfolio') || '{}'); // {SYM:{qty,avgCost}}
+let history = JSON.parse(localStorage.getItem('history') || '[]');     // [string]
+let dayOpen = JSON.parse(localStorage.getItem('dayOpen') || '{}');     // {SYM:price}
+let lastSessionOpen = JSON.parse(localStorage.getItem('lastSessionOpen') || 'false');
+let orders = JSON.parse(localStorage.getItem('orders') || '[]');       // [{id,symbol,side,qty,limit,active}]
+let equityHistory = JSON.parse(localStorage.getItem('equityHistory') || '[]'); // [{t,e}]
+
+const stocks = [
+  { symbol: "NPN", sector: "Tech", price: 3500 },
+  { symbol: "SOL", sector: "Energy", price: 180 },
+  { symbol: "AGL", sector: "Mining", price: 500 },
+  { symbol: "AAPL", sector: "Tech", price: 190 },
+  { symbol: "MSFT", sector: "Tech", price: 410 },
+  { symbol: "TSLA", sector: "Auto", price: 250 }
+];
+
+let newsEvent = null; // {symbol, impact, timer, headline}
+let dayVolatility = 1.0;
+
+/* =========================
+   Helpers
+   ========================= */
+function saveState() {
+  localStorage.setItem('cash', String(cash));
+  localStorage.setItem('portfolio', JSON.stringify(portfolio));
+  localStorage.setItem('history', JSON.stringify(history.slice(0, 300)));
+  localStorage.setItem('dayOpen', JSON.stringify(dayOpen));
+  localStorage.setItem('lastSessionOpen', JSON.stringify(lastSessionOpen));
+  localStorage.setItem('orders', JSON.stringify(orders));
+  localStorage.setItem('equityHistory', JSON.stringify(equityHistory.slice(-500)));
+}
+function marketIsOpen() {
+  const h = new Date().getHours();
+  return h >= MARKET_OPEN_HOUR && h < MARKET_CLOSE_HOUR;
+}
+function fmt(n) { return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+function feeFor(notionalAbs) { return Math.max(notionalAbs * COMMISSION_RATE, COMMISSION_MIN); }
+
+/* =========================
+   Session, news, dividends
+   ========================= */
+function updateSession() {
+  const open = marketIsOpen();
+  if (open && !lastSessionOpen) {
+    for (const s of stocks) dayOpen[s.symbol] = s.price;
+    dayVolatility = 0.6 + Math.random() * 1.6; // 0.6–2.2x
+    logEvent(`Market opened (09:00–22:00). Volatility: ${dayVolatility.toFixed(2)}x`);
+  }
+  if (!open && lastSessionOpen) logEvent("Market closed.");
+  lastSessionOpen = open;
+  saveState();
+}
+function maybeTriggerNews() {
+  if (newsEvent) return;
+  if (Math.random() < 0.05) {
+    const s = stocks[Math.floor(Math.random() * stocks.length)];
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const mag = 0.05 + Math.random() * 0.12;
+    newsEvent = { symbol: s.symbol, impact: sign * mag, timer: 6 + Math.floor(Math.random()*6), headline: `${s.symbol} ${sign>0?'beats':'misses'} expectations (${(mag*100).toFixed(1)}% shock)` };
+    setNews(`NEWS: ${newsEvent.headline}`);
+    logEvent(`NEWS: ${newsEvent.headline}`);
+  }
+}
+function tickNews() {
+  if (!newsEvent) return;
+  newsEvent.timer -= 1;
+  if (newsEvent.timer <= 0) {
+    newsEvent = null;
+    setNews("No news right now.");
+  }
+}
+function setNews(text) { document.getElementById('newsBox').textContent = text; }
+function maybePayDividends() {
+  if (Math.random() < 0.08) {
+    const s = stocks[Math.floor(Math.random() * stocks.length)];
+    const p = portfolio[s.symbol];
+    if (p && p.qty !== 0) {
+      const yieldAnnual = 0.02 + Math.random() * 0.02;
+      const daily = (yieldAnnual / 252) * s.price * Math.abs(p.qty);
+      if (daily > 0) {
+        cash += daily;
+        logEvent(`Dividend: ${s.symbol} paid R${daily.toFixed(2)}`);
+      }
+    }
+  }
+}
+
+/* =========================
+   Prices
+   ========================= */
+function stepPrice(s) {
+  if (!marketIsOpen()) return s.price;
+  let change = (Math.random() - 0.5) * s.price * 0.01 * dayVolatility;
+  if (newsEvent && newsEvent.symbol === s.symbol) change += s.price * newsEvent.impact * 0.02;
+  const next = Math.max(0.01, +(s.price + change).toFixed(2));
+  return next;
+}
+function midToTrade(side, mid) {
+  // apply half-spread against trader
+  const spread = mid * (SPREAD_BPS/10000);
+  return side === 'buy' ? mid + spread : mid - spread;
+}
+
+/* =========================
+   Exposure, equity, margin
+   ========================= */
+function currentEquity() {
+  let val = cash;
+  for (const s of stocks) {
+    const pos = portfolio[s.symbol];
+    if (pos && pos.qty !== 0) val += s.price * pos.qty;
+  }
+  return val;
+}
+function exposureAbs() {
+  let exp = 0;
+  for (const s of stocks) {
+    const pos = portfolio[s.symbol];
+    if (pos && pos.qty !== 0) exp += Math.abs(s.price * pos.qty);
+  }
+  return exp;
+}
+function withinLeverageAfter(deltaCash, deltaQtyBySym) {
+  // simulate immediate effect
+  let equity = currentEquity() + deltaCash;
+  let exp = 0;
+  const map = {};
+  for (const s of stocks) map[s.symbol] = (portfolio[s.symbol]?.qty || 0);
+  for (const sym in deltaQtyBySym) map[sym] = (map[sym] || 0) + deltaQtyBySym[sym];
+  for (const s of stocks) exp += Math.abs(s.price * (map[s.symbol]||0));
+  return exp <= equity * MAX_LEVERAGE;
+}
+function marginCheck() {
+  const equity = currentEquity();
+  const exp = exposureAbs();
+  if (exp === 0) return; // nothing to liquidate
+  const maintenance = exp * MAINT_MARGIN;
+  if (equity < maintenance) {
+    logEvent(`Margin call! Equity R${fmt(equity)} < Maint R${fmt(maintenance)}. Liquidating.`);
+    // Liquidate towards reducing exposure: close largest absolute positions first
+    const list = Object.keys(portfolio).map(sym => {
+      const s = stocks.find(x=>x.symbol===sym);
+      return { sym, value: s.price * (portfolio[sym]?.qty||0), px: s.price };
+    }).sort((a,b) => Math.abs(b.value) - Math.abs(a.value));
+    for (const it of list) {
+      const qty = portfolio[it.sym]?.qty || 0;
+      if (qty === 0) continue;
+      const side = qty > 0 ? 'sell' : 'buy'; // close
+      const px = midToTrade(side, it.px);
+      const notional = px * Math.abs(qty);
+      const fee = feeFor(notional);
+      // adjust cash and position
+      cash += (side==='sell' ? notional : -notional) - fee;
+      portfolio[it.sym].qty = 0;
+      portfolio[it.sym].avgCost = 0;
+      logEvent(`Liquidated ${Math.abs(qty)} ${it.sym} @ R${px.toFixed(2)} (fee R${fee.toFixed(2)})`);
+      if (currentEquity() >= exposureAbs() * MAINT_MARGIN) break;
+    }
+  }
+}
+
+/* =========================
+   Trading: market & limit, shorts
+   ========================= */
+function placeMarket(symbol, side) {
+  const s = stocks.find(x=>x.symbol===symbol);
+  const qty = parseInt(prompt(`${side.toUpperCase()} how many ${symbol}? (Shorts allowed)`),10);
+  if (!qty || qty<=0) return;
+  const px = midToTrade(side, s.price);
+  const notional = px * qty;
+  const fee = feeFor(notional);
+  const cashDelta = (side==='buy' ? -notional - fee : +notional - fee);
+  const qtyDelta = side==='buy' ? qty : -qty; // sell reduces qty; can go negative
+  if (!withinLeverageAfter(cashDelta, { [symbol]: qtyDelta })) return alert("Leverage limit reached.");
+  applyTrade(symbol, side, qty, px, fee);
+}
+function placeLimit(symbol, side) {
+  const s = stocks.find(x=>x.symbol===symbol);
+  const qty = parseInt(prompt(`Limit ${side.toUpperCase()} qty for ${symbol}?`),10);
+  if (!qty || qty<=0) return;
+  const limit = parseFloat(prompt(`Limit price (R) for ${symbol}? Current ~ R${s.price.toFixed(2)}`));
+  if (!isFinite(limit) || limit<=0) return;
+  const id = Math.random().toString(36).slice(2,9).toUpperCase();
+  orders.unshift({ id, symbol, side, qty, limit, active: true });
+  logEvent(`Limit ${side} ${qty} ${symbol} @ R${limit.toFixed(2)} (id ${id})`);
+  saveState();
+  renderOrders();
+}
+function cancelOrder(id) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  o.active = false;
+  logEvent(`Cancelled order ${id}`);
+  saveState();
+  renderOrders();
+}
+function matchLimitOrders() {
+  for (const o of orders) {
+    if (!o.active) continue;
+    const s = stocks.find(x=>x.symbol===o.symbol);
+    if (!s) continue;
+    // Crossing rules on mid (we’ll still apply spread at execution)
+    const crosses = (o.side==='buy') ? (s.price <= o.limit) : (s.price >= o.limit);
+    if (!crosses) continue;
+    const px = midToTrade(o.side, s.price);
+    const notional = px * o.qty;
+    const fee = feeFor(notional);
+    const cashDelta = (o.side==='buy' ? -notional - fee : +notional - fee);
+    const qtyDelta = o.side==='buy' ? o.qty : -o.qty;
+    if (!withinLeverageAfter(cashDelta, { [o.symbol]: qtyDelta })) {
+      o.active = false;
+      logEvent(`Order ${o.id} rejected on leverage check.`);
+      continue;
+    }
+    applyTrade(o.symbol, o.side, o.qty, px, fee);
+    o.active = false;
+    logEvent(`Order ${o.id} filled @ R${px.toFixed(2)}`);
+  }
+  // purge old/inactive to keep list compact
+  orders = orders.filter(o=>o.active);
+}
+
+/* apply trade to portfolio */
+function applyTrade(symbol, side, qty, px, fee) {
+  const notional = px * qty;
+  cash += (side==='buy' ? -notional - fee : +notional - fee);
+  if (!portfolio[symbol]) portfolio[symbol] = { qty: 0, avgCost: 0 };
+  const p = portfolio[symbol];
+
+  // Avg cost behavior supports long and short:
+  // - If same direction, recalc weighted avg.
+  // - If reducing/closing, adjust qty and reset avg when crossing through zero.
+  const dir = side==='buy' ? 1 : -1;
+  const newQty = p.qty + dir*qty;
+
+  if ((p.qty >= 0 && dir>0) || (p.qty <= 0 && dir<0)) {
+    // adding to same side
+    const totalCost = p.avgCost * Math.abs(p.qty) + px * qty;
+    p.qty = newQty;
+    p.avgCost = totalCost / Math.abs(p.qty);
+  } else {
+    // reducing or flipping
+    p.qty = newQty;
+    if (p.qty === 0) p.avgCost = 0;
+    // If flipped sign, set avg to trade px (new side baseline)
+    if ((dir>0 && p.qty>0) || (dir<0 && p.qty<0)) p.avgCost = px;
+  }
+
+  logEvent(`${side==='buy'?'Bought':'Sold'} ${qty} ${symbol} @ R${px.toFixed(2)} (fee R${fee.toFixed(2)})`);
+  saveState();
+  renderAll();
+}
+
+/* =========================
+   Rendering
+   ========================= */
+function renderMarket() {
+  const body = document.getElementById('marketBody');
+  body.innerHTML = '';
+  let equity = cash;
+  for (const s of stocks) {
+    const openPx = dayOpen[s.symbol] ?? s.price;
+    const dayPct = ((s.price - openPx) / openPx) * 100;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.symbol}</td>
+      <td><span class="pill">${s.sector}</span></td>
+      <td class="right">R ${fmt(s.price)}</td>
+      <td class="right ${dayPct >= 0 ? 'green' : 'red'}">${dayPct.toFixed(2)}%</td>
+      <td class="right">
+        <button onclick="placeMarket('${s.symbol}','buy')">Buy</button>
+        <button class="secondary" onclick="placeMarket('${s.symbol}','sell')">Sell</button>
+        <button class="secondary" onclick="placeLimit('${s.symbol}','buy')">Limit Buy</button>
+        <button class="secondary" onclick="placeLimit('${s.symbol}','sell')">Limit Sell</button>
+      </td>
+    `;
+    body.appendChild(tr);
+    const pos = portfolio[s.symbol];
+    if (pos) equity += s.price * pos.qty;
+  }
+  document.getElementById('cash').textContent = fmt(cash);
+  document.getElementById('equity').textContent = fmt(equity);
+  document.getElementById('holdingsCount').textContent = Object.keys(portfolio).length + ' holdings';
+  document.getElementById('lastUpdate').textContent = 'Last update: ' + new Date().toLocaleTimeString();
+  const badge = document.getElementById('statusBadge');
+  const open = marketIsOpen();
+  badge.textContent = open ? 'OPEN' : 'CLOSED';
+  badge.className = 'badge ' + (open ? 'open' : 'closed');
+}
+function renderPortfolio() {
+  const body = document.getElementById('portfolioBody');
+  body.innerHTML = '';
+  for (const sym of Object.keys(portfolio)) {
+    const p = portfolio[sym];
+    if (!p) continue;
+    const s = stocks.find(x => x.symbol === sym);
+    const value = s.price * p.qty;
+    const pnl = (s.price - p.avgCost) * p.qty;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${sym}</td>
+      <td class="right">${p.qty}</td>
+      <td class="right">R ${fmt(p.avgCost)}</td>
+      <td class="right">R ${fmt(value)}</td>
+      <td class="right ${pnl >= 0 ? 'green' : 'red'}">R ${fmt(pnl)}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+function renderOrders() {
+  const body = document.getElementById('ordersBody');
+  body.innerHTML = '';
+  for (const o of orders) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${o.id}</td>
+      <td>${o.symbol}</td>
+      <td>${o.side.toUpperCase()}</td>
+      <td class="right">${o.qty}</td>
+      <td class="right">R ${fmt(o.limit)}</td>
+      <td>${o.active ? 'Active' : 'Done'}</td>
+      <td>${o.active ? `<button class="warn" onclick="cancelOrder('${o.id}')">Cancel</button>` : ''}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+function renderHistory() {
+  const ul = document.getElementById('historyList');
+  ul.innerHTML = '';
+  for (const item of history.slice(0, 80)) {
+    const li = document.createElement('li');
+    li.textContent = item;
+    ul.appendChild(li);
+  }
+}
+
+/* =========================
+   Analytics: equity series, returns, vol, MDD, Sharpe
+   ========================= */
+function recordEquityPoint() {
+  const e = currentEquity();
+  equityHistory.push({ t: Date.now(), e });
+  if (equityHistory.length > 500) equityHistory.shift();
+}
+function computeAnalytics() {
+  if (equityHistory.length < 3) return { retPct: 0, volPct: 0, mddPct: 0, sharpe: 0 };
+  const start = equityHistory[0].e;
+  const end = equityHistory[equityHistory.length-1].e;
+  const retPct = ((end - start) / start) * 100;
+
+  // returns per step
+  const rets = [];
+  for (let i=1;i<equityHistory.length;i++) {
+    const r = (equityHistory[i].e - equityHistory[i-1].e) / equityHistory[i-1].e;
+    rets.push(r);
+  }
+  const mean = rets.reduce((a,b)=>a+b,0)/rets.length;
+  const varr = rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/Math.max(1, rets.length-1);
+  const volPct = Math.sqrt(varr) * Math.sqrt(252*(1000/TICK_MS)*60*60*24) * 100 * 0.01; // rough scaling
+  // max drawdown
+  let peak = equityHistory[0].e, mdd = 0;
+  for (const p of equityHistory) {
+    peak = Math.max(peak, p.e);
+    mdd = Math.min(mdd, (p.e - peak)/peak);
+  }
+  const mddPct = Math.abs(mdd)*100;
+  const sharpe = (mean / Math.sqrt(varr || 1e-9)) * Math.sqrt(252) || 0;
+  return { retPct, volPct, mddPct, sharpe };
+}
+function drawChart() {
+  const c = document.getElementById('equityChart');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  if (equityHistory.length < 2) return;
+  const padding = 8;
+  const xs = equityHistory.map(p=>p.t);
+  const ys = equityHistory.map(p=>p.e);
+  const xmin = xs[0], xmax = xs[xs.length-1];
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const xmap = t => padding + ( (t - xmin) / Math.max(1,(xmax-xmin)) ) * (c.width - 2*padding);
+  const ymap = v => c.height - padding - ( (v - ymin) / Math.max(1,(ymax-ymin)) ) * (c.height - 2*padding);
+  ctx.strokeStyle = '#2b5cff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(xmap(xs[0]), ymap(ys[0]));
+  for (let i=1;i<xs.length;i++) ctx.lineTo(xmap(xs[i]), ymap(ys[i]));
+  ctx.stroke();
+}
+
+/* =========================
+   Events & loop
+   ========================= */
+function logEvent(text) {
+  const stamp = new Date().toLocaleTimeString();
+  history.unshift(`[${stamp}] ${text}`);
+  while (history.length > 300) history.pop();
+}
+function resetGame() {
+  if (!confirm('Reset all progress?')) return;
+  cash = 100000;
+  portfolio = {};
+  history = [];
+  dayOpen = {};
+  lastSessionOpen = false;
+  newsEvent = null;
+  dayVolatility = 1.0;
+  orders = [];
+  equityHistory = [];
+  for (const s of stocks) dayOpen[s.symbol] = s.price;
+  saveState();
+  logEvent('Game reset.');
+  renderAll();
+}
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+// keyboard shortcut: L to place limit on focused symbol (fallback: prompts for symbol)
+document.addEventListener('keydown', (e)=>{
+  if (e.key.toLowerCase() === 'l') {
+    const sym = prompt('Symbol for limit order (e.g., AAPL)?');
+    if (!sym) return;
+    const side = prompt('Side: buy or sell?')?.toLowerCase();
+    if (side!=='buy' && side!=='sell') return;
+    placeLimit(sym.toUpperCase(), side);
+  }
+});
+
+function tick() {
+  updateSession();
+
+  // Move prices
+  for (let i = 0; i < stocks.length; i++) {
+    const s = stocks[i];
+    const next = stepPrice(s);
+    if (dayOpen[s.symbol] === undefined) dayOpen[s.symbol] = s.price;
+    s.price = next;
+  }
+
+  // Match limit orders, news & dividends, margin checks
+  matchLimitOrders();
+  if (!newsEvent) maybeTriggerNews();
+  tickNews();
+  maybePayDividends();
+  marginCheck();
+
+  // Record analytics
+  recordEquityPoint();
+
+  // Draw UI
+  saveState();
+  renderAll();
+}
+
+function renderAll() {
+  renderMarket();
+  renderPortfolio();
+  renderOrders();
+  renderHistory();
+  drawChart();
+  const a = computeAnalytics();
+  document.getElementById('analyticsLine').textContent =
+    `Total return: ${a.retPct.toFixed(2)}% • Volatility: ${a.volPct.toFixed(2)}% • Max drawdown: ${a.mddPct.toFixed(2)}% • Sharpe: ${a.sharpe.toFixed(2)}`;
+}
+
+/* =========================
+   Bootstrap
+   ========================= */
+(function init() {
+  if (Object.keys(dayOpen).length === 0) {
+    for (const s of stocks) dayOpen[s.symbol] = s.price;
+  }
+  recordEquityPoint();
+  renderAll();
+  updateSession();
+  setInterval(tick, TICK_MS);
+})();
+</script>
+</body>
+</html>
